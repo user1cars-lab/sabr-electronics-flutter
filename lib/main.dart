@@ -80,20 +80,36 @@ class _HomeState extends State<Home> {
   ]);
   Widget sectionTitle(String s) => Padding(padding: const EdgeInsets.only(bottom: 10), child: Text(s, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: navy)));
   Future<void> edit([Device? old]) async { final r = await showDialog<Device>(context: context, builder: (_) => DeviceForm(device: old)); if (r != null) { setState(() => old == null ? devices.insert(0, r) : devices[devices.indexOf(old)] = r); save(); } }
-  void details(Device d) => showModalBottomSheet(context: context, isScrollControlled: true, builder: (_) => Directionality(textDirection: TextDirection.rtl, child: Padding(padding: const EdgeInsets.all(20), child: Wrap(children: [
-    Text('${d.type} — ${d.model}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: navy)),
-    ListTile(title: Text(d.customer), subtitle: Text('${d.phone}\nرقم الطلب: ${d.id}')),
-    ListTile(title: const Text('الحالة'), trailing: DropdownButton<String>(value: d.status, items: statuses.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(), onChanged: (s) { if (s != null) { d.status = s; save(); Navigator.pop(context); } })),
-    Text('المبلغ: ${d.amount} | المدفوع: ${d.paid}'), if (d.notes.isNotEmpty) Text('\nملاحظات: ${d.notes}'), const SizedBox(height: 12),
-    Row(children: [Expanded(child: OutlinedButton.icon(onPressed: () => edit(d), icon: const Icon(Icons.edit), label: const Text('تعديل'))), const SizedBox(width: 8), Expanded(child: FilledButton.icon(onPressed: () => whatsapp(d), icon: const Icon(Icons.chat), label: const Text('واتساب')))]),
-  ]))));
+  void details(Device d) {
+    showModalBottomSheet(context: context, isScrollControlled: true, builder: (_) => Directionality(textDirection: TextDirection.rtl, child: Padding(padding: const EdgeInsets.all(20), child: Wrap(children: [
+      Text('${d.type} — ${d.model}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: navy)),
+      ListTile(title: Text(d.customer), subtitle: Text('${d.phone}\nرقم الطلب: ${d.id}')),
+      ListTile(title: const Text('الحالة'), trailing: DropdownButton<String>(value: d.status, items: statuses.map((x) => DropdownMenuItem(value: x, child: Text(x))).toList(), onChanged: (x) { if (x != null) { d.status = x; save(); Navigator.pop(context); } })),
+      Text('المبلغ: ${d.amount} | المدفوع: ${d.paid}'), if (d.notes.isNotEmpty) Text('\nملاحظات: ${d.notes}'), const SizedBox(height: 12),
+      Row(children: [Expanded(child: OutlinedButton.icon(onPressed: () => edit(d), icon: const Icon(Icons.edit), label: const Text('تعديل'))), const SizedBox(width: 8), Expanded(child: FilledButton.icon(onPressed: () => whatsapp(d), icon: const Icon(Icons.chat), label: const Text('واتساب')))]),
+    ]))));
+  }
   Future<void> whatsapp(Device d)async{final u=Uri.parse('https://wa.me/${d.phone.replaceAll(RegExp(r'[^0-9]'), '')}?text=${Uri.encodeComponent('مرحباً ${d.customer}، تحديث جهازك ${d.type} ${d.model}: ${d.status} — صبر إلكترونكس')}');if(await canLaunchUrl(u))await launchUrl(u,mode:LaunchMode.externalApplication);}
   Future<void> exportCsv() async {final csv='رقم الطلب,الزبون,الهاتف,النوع,الموديل,الحالة,المبلغ,المدفوع\n${devices.map((d)=>'${d.id},${d.customer},${d.phone},${d.type},${d.model},${d.status},${d.amount},${d.paid}').join('\n')}';await Share.share(csv,subject:'تقرير صبر إلكترونكس');}
   Future<void> backup() async {await Share.share(jsonEncode(devices.map((d)=>d.toJson()).toList()),subject:'نسخة احتياطية - صبر إلكترونكس');}
   Future<void> restore()async{final result=await FilePicker.platform.pickFiles(type:FileType.custom,allowedExtensions:['json'],withData:true);if(result==null||result.files.single.bytes==null)return;try{final restored=(jsonDecode(utf8.decode(result.files.single.bytes!)) as List).map((e)=>Device.fromJson(e)).toList();setState(()=>devices=restored);await save();ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('تمت استعادة النسخة الاحتياطية')));}catch(_){ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('ملف النسخة الاحتياطية غير صالح')));}}
 }
 
-class DeviceForm extends StatefulWidget{final Device? device;const DeviceForm({super.key,this.device});@override State<DeviceForm> createState()=>_DeviceFormState();}
-class _DeviceFormState extends State<DeviceForm>{final form=GlobalKey<FormState>();late TextEditingController customer,phone,type,model,notes,amount,paid;String status=statuses.first;DateTime due=DateTime.now().add(const Duration(days:3));@override void initState(){super.initState();final d=widget.device;customer=TextEditingController(text:d?.customer??'');phone=TextEditingController(text:d?.phone??'');type=TextEditingController(text:d?.type??'');model=TextEditingController(text:d?.model??'');notes=TextEditingController(text:d?.notes??'');amount=TextEditingController(text:d?.amount.toString()??'0');paid=TextEditingController(text:d?.paid.toString()??'0');status=d?.status??statuses.first;if(d?.due!=null&&DateTime.tryParse(d!.due)!=null)due=DateTime.parse(d.due);}
-Widget field(TextEditingController c,String l,{TextInputType? keyboard})=>Padding(padding:const EdgeInsets.only(bottom:10),child:TextFormField(controller:c,keyboardType:keyboard,validator:(v)=>v==null||v.trim().isEmpty?'مطلوب':null,decoration:InputDecoration(labelText:l)));@override Widget build(BuildContext c)=>AlertDialog(title:Text(widget.device==null?'إضافة جهاز':'تعديل الجهاز'),content:SizedBox(width:420,child:Form(key:form,child:SingleChildScrollView(child:Column(children:[field(customer,'اسم الزبون'),field(phone,'رقم الهاتف',keyboard:TextInputType.phone),field(type,'نوع الجهاز'),field(model,'الموديل'),DropdownButtonFormField(value:status,decoration:const InputDecoration(labelText:'الحالة'),items:statuses.map((s)=>DropdownMenuItem(value:s,child:Text(s))).toList(),onChanged:(v)=>setState(()=>status=v!),),field(amount,'المبلغ',keyboard:TextInputType.number),field(paid,'المدفوع',keyboard:TextInputType.number),field(notes,'ملاحظات')])))),actions:[TextButton(onPressed:()=>Navigator.pop(c),child:const Text('إلغاء')),FilledButton(onPressed:(){if(form.currentState!.validate()){final d=Device(id:widget.device?.id??'SE-${DateFormat('yyMMddHHmm').format(DateTime.now())}',customer:customer.text,phone:phone.text,type:type.text,model:model.text,status:status,received:widget.device?.received??DateTime.now().toIso8601String(),due:due.toIso8601String(),notes:notes.text,amount:double.tryParse(amount.text)??0,paid:double.tryParse(paid.text)??0);Navigator.pop(c,d);}},child:const Text('حفظ'))]);}
+class DeviceForm extends StatefulWidget {
+  final Device? device;
+  const DeviceForm({super.key, this.device});
+  @override State<DeviceForm> createState() => _DeviceFormState();
+}
+class _DeviceFormState extends State<DeviceForm> {
+  final form = GlobalKey<FormState>();
+  late TextEditingController customer, phone, type, model, notes, amount, paid;
+  String status = statuses.first;
+  DateTime due = DateTime.now().add(const Duration(days: 3));
+  @override void initState() {
+    super.initState(); final d = widget.device;
+    customer = TextEditingController(text: d?.customer ?? ''); phone = TextEditingController(text: d?.phone ?? ''); type = TextEditingController(text: d?.type ?? ''); model = TextEditingController(text: d?.model ?? ''); notes = TextEditingController(text: d?.notes ?? ''); amount = TextEditingController(text: d?.amount.toString() ?? '0'); paid = TextEditingController(text: d?.paid.toString() ?? '0'); status = d?.status ?? statuses.first;
+    if (d?.due != null && DateTime.tryParse(d!.due) != null) due = DateTime.parse(d.due);
+  }
+  Widget field(TextEditingController c, String l, {TextInputType? keyboard}) => Padding(padding: const EdgeInsets.only(bottom: 10), child: TextFormField(controller: c, keyboardType: keyboard, validator: (v) => v == null || v.trim().isEmpty ? 'مطلوب' : null, decoration: InputDecoration(labelText: l)));
+  @override Widget build(BuildContext c) => AlertDialog(title: Text(widget.device == null ? 'إضافة جهاز' : 'تعديل الجهاز'), content: SizedBox(width: 420, child: Form(key: form, child: SingleChildScrollView(child: Column(children: [field(customer, 'اسم الزبون'), field(phone, 'رقم الهاتف', keyboard: TextInputType.phone), field(type, 'نوع الجهاز'), field(model, 'الموديل'), DropdownButtonFormField<String>(value: status, decoration: const InputDecoration(labelText: 'الحالة'), items: statuses.map((x) => DropdownMenuItem(value: x, child: Text(x))).toList(), onChanged: (x) => setState(() => status = x!)), field(amount, 'المبلغ', keyboard: TextInputType.number), field(paid, 'المدفوع', keyboard: TextInputType.number), field(notes, 'ملاحظات')])))), actions: [TextButton(onPressed: () => Navigator.pop(c), child: const Text('إلغاء')), FilledButton(onPressed: () { if (form.currentState!.validate()) { final d = Device(id: widget.device?.id ?? 'SE-${DateFormat('yyMMddHHmm').format(DateTime.now())}', customer: customer.text, phone: phone.text, type: type.text, model: model.text, status: status, received: widget.device?.received ?? DateTime.now().toIso8601String(), due: due.toIso8601String(), notes: notes.text, amount: double.tryParse(amount.text) ?? 0, paid: double.tryParse(paid.text) ?? 0); Navigator.pop(c, d); } }, child: const Text('حفظ'))]);
 }
