@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart';
+import 'package:file_picker/file_picker.dart';
 
 const navy = Color(0xFF102A43), teal = Color(0xFF0E9F9A), orange = Color(0xFFF59E0B), bg = Color(0xFFF4F7FA);
 const statuses = ['تم الاستلام','قيد الفحص','بانتظار موافقة الزبون','قيد الإصلاح','جاهز للتسليم','تم التسليم','لم يتم الإصلاح','ملغي'];
@@ -38,9 +39,9 @@ class _HomeState extends State<Home> {
   Future<void> edit([Device? old]) async {final r=await showDialog<Device>(context:context,builder:(_)=>DeviceForm(device:old)); if(r!=null){setState(()=>old==null?devices.insert(0,r):devices[devices.indexOf(old)]=r);save();}}
   void details(Device d)=>showModalBottomSheet(context:context,isScrollControlled:true,builder:(_)=>Directionality(textDirection:TextDirection.rtl,child:Padding(padding:const EdgeInsets.all(20),child:Wrap(children:[Text('${d.type} — ${d.model}',style:const TextStyle(fontSize:22,fontWeight:FontWeight.bold,color:navy)),ListTile(title:Text(d.customer),subtitle:Text('${d.phone}\nرقم الطلب: ${d.id}')),ListTile(title:const Text('الحالة'),trailing:DropdownButton<String>(value:d.status,items:statuses.map((s)=>DropdownMenuItem(value:s,child:Text(s))).toList(),onChanged:(s){if(s!=null){d.status=s;save();Navigator.pop(context);}})),Text('المبلغ: ${d.amount} | المدفوع: ${d.paid}'),if(d.notes.isNotEmpty)Text('\nملاحظات: ${d.notes}'),const SizedBox(height:12),Row(children:[Expanded(child:OutlinedButton.icon(onPressed:()=>edit(d),icon:const Icon(Icons.edit),label:const Text('تعديل'))),const SizedBox(width:8),Expanded(child:FilledButton.icon(onPressed:()=>whatsapp(d),icon:const Icon(Icons.chat),label:const Text('واتساب')))])])));
   Future<void> whatsapp(Device d)async{final u=Uri.parse('https://wa.me/${d.phone.replaceAll(RegExp(r'[^0-9]'), '')}?text=${Uri.encodeComponent('مرحباً ${d.customer}، تحديث جهازك ${d.type} ${d.model}: ${d.status} — صبر إلكترونكس')}');if(await canLaunchUrl(u))await launchUrl(u,mode:LaunchMode.externalApplication);}
-  Future<void> exportCsv(){final csv='رقم الطلب,الزبون,الهاتف,النوع,الموديل,الحالة,المبلغ,المدفوع\n${devices.map((d)=>'${d.id},${d.customer},${d.phone},${d.type},${d.model},${d.status},${d.amount},${d.paid}').join('\n')}';return Share.share(csv,subject:'تقرير صبر إلكترونكس');}
-  Future<void> backup()=>Share.share(jsonEncode(devices.map((d)=>d.toJson()).toList()),subject:'نسخة احتياطية - صبر إلكترونكس');
-  Future<void> restore()async{ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('انسخ ملف JSON إلى التطبيق ثم استخدم الاستعادة من نسخة مدعومة في الإصدار القادم')));}
+  Future<void> exportCsv() async {final csv='رقم الطلب,الزبون,الهاتف,النوع,الموديل,الحالة,المبلغ,المدفوع\n${devices.map((d)=>'${d.id},${d.customer},${d.phone},${d.type},${d.model},${d.status},${d.amount},${d.paid}').join('\n')}';await Share.share(csv,subject:'تقرير صبر إلكترونكس');}
+  Future<void> backup() async {await Share.share(jsonEncode(devices.map((d)=>d.toJson()).toList()),subject:'نسخة احتياطية - صبر إلكترونكس');}
+  Future<void> restore()async{final result=await FilePicker.platform.pickFiles(type:FileType.custom,allowedExtensions:['json'],withData:true);if(result==null||result.files.single.bytes==null)return;try{final restored=(jsonDecode(utf8.decode(result.files.single.bytes!)) as List).map((e)=>Device.fromJson(e)).toList();setState(()=>devices=restored);await save();ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('تمت استعادة النسخة الاحتياطية')));}catch(_){ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('ملف النسخة الاحتياطية غير صالح')));}}
 }
 
 class DeviceForm extends StatefulWidget{final Device? device;const DeviceForm({super.key,this.device});@override State<DeviceForm> createState()=>_DeviceFormState();}
