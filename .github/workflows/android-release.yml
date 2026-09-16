@@ -1,0 +1,59 @@
+name: Build Android Release APK
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.2'
+          channel: stable
+          cache: true
+
+      - name: Generate platform folders
+        run: flutter create . --platforms=android --project-name sabr_electronics
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze Dart code
+        run: flutter analyze
+        continue-on-error: true
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Rename APK
+        run: cp build/app/outputs/flutter-apk/app-release.apk sabr-electronics-release.apk
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sabr-electronics-release-apk
+          path: sabr-electronics-release.apk
+          retention-days: 30
+
+      - name: Publish public GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.0-${{ github.run_number }}
+          name: Sabr Electronics Android v1.0.0-${{ github.run_number }}
+          body: |
+            نسخة Android Release قابلة للتثبيت من تطبيق صبر إلكترونكس.
+
+            حمّل الملف `sabr-electronics-release.apk` وثبّته على جهاز Android. قد تحتاج إلى السماح بالتثبيت من مصادر غير معروفة.
+          files: sabr-electronics-release.apk
+          generate_release_notes: true

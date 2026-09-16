@@ -13,6 +13,10 @@ flutter pub get
 flutter run
 ```
 
+## تحميل نسخة Android عامة
+
+ينشئ GitHub Actions نسخة APK Release تلقائياً عند تشغيل workflow يدوياً أو دفع tag يبدأ بـ `v`. يمكن لأي شخص تحميل أحدث نسخة من صفحة [Releases](https://github.com/user1cars-lab/sabr-electronics-flutter/releases/latest)، ثم تنزيل الملف `sabr-electronics-release.apk` وتثبيته على Android. لا تحتاج النسخة إلى تشغيل Metro أو توصيل الهاتف بالكمبيوتر.
+
 لإنشاء نسخة Android:
 
 ```bash
