@@ -18,7 +18,7 @@ class Device {
 }
 
 void main()=>runApp(const SabrApp());
-class SabrApp extends StatelessWidget { const SabrApp({super.key}); @override Widget build(BuildContext c)=>MaterialApp(debugShowCheckedModeBanner:false, title:'صبر إلكترونكس', theme:ThemeData(useMaterial3:true, scaffoldBackgroundColor:bg, colorScheme:ColorScheme.fromSeed(seedColor:teal), fontFamily:'Arial', inputDecorationTheme:const InputDecorationTheme(filled:true, fillColor:Colors.white, border:OutlineInputBorder(borderRadius:BorderRadius.all(Radius.circular(12)), borderSide:BorderSide.none))), home:const Directionality(textDirection:TextDirection.rtl, child:Home())); }
+class SabrApp extends StatelessWidget { const SabrApp({super.key}); @override Widget build(BuildContext c)=>MaterialApp(debugShowCheckedModeBanner:false, title:'صبر إلكترونكس', theme:ThemeData(useMaterial3:true, scaffoldBackgroundColor:bg, colorScheme:ColorScheme.fromSeed(seedColor:teal), fontFamily:'Arial', inputDecorationTheme:const InputDecorationTheme(filled:true, fillColor:Colors.white, border:OutlineInputBorder(borderRadius:BorderRadius.all(Radius.circular(12)), borderSide:BorderSide.none))), home:const Directionality(textDirection:TextDirection.values.last, child:Home())); }
 
 class Home extends StatefulWidget { const Home({super.key}); @override State<Home> createState()=>_HomeState(); }
 class _HomeState extends State<Home> {
@@ -81,7 +81,7 @@ class _HomeState extends State<Home> {
   Widget sectionTitle(String s) => Padding(padding: const EdgeInsets.only(bottom: 10), child: Text(s, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: navy)));
   Future<void> edit([Device? old]) async { final r = await showDialog<Device>(context: context, builder: (_) => DeviceForm(device: old)); if (r != null) { setState(() => old == null ? devices.insert(0, r) : devices[devices.indexOf(old)] = r); save(); } }
   void details(Device d) {
-    showModalBottomSheet(context: context, isScrollControlled: true, builder: (_) => Directionality(textDirection: TextDirection.rtl, child: Padding(padding: const EdgeInsets.all(20), child: Wrap(children: [
+    showModalBottomSheet(context: context, isScrollControlled: true, builder: (_) => Directionality(textDirection: TextDirection.values.last, child: Padding(padding: const EdgeInsets.all(20), child: Wrap(children: [
       Text('${d.type} — ${d.model}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: navy)),
       ListTile(title: Text(d.customer), subtitle: Text('${d.phone}\nرقم الطلب: ${d.id}')),
       ListTile(title: const Text('الحالة'), trailing: DropdownButton<String>(value: d.status, items: statuses.map((x) => DropdownMenuItem(value: x, child: Text(x))).toList(), onChanged: (x) { if (x != null) { d.status = x; save(); Navigator.pop(context); } })),
