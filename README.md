@@ -1,3 +1,12 @@
+<div align="center">
+<img src="./assets/project-cover.png" alt="SABR Electronics Flutter" width="100%" />
+
+# SABR Electronics — Flutter
+
+<img src="https://img.shields.io/badge/Flutter-54C5F8?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter" /> <img src="https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white" alt="Dart" /> <img src="https://img.shields.io/badge/RTL-Arabic-8B5CF6?style=for-the-badge" alt="Arabic RTL" />
+
+</div>
+
 # صبر إلكترونكس — Flutter
 
 تطبيق جوال محلي لإدارة أجهزة الزبائن في محل **صبر إلكترونكس**، مبني بلغة Dart وFlutter مع واجهة عربية RTL. لا يحتاج إلى خادم أو حساب أو مفتاح API؛ تحفظ البيانات محلياً على الهاتف باستخدام `shared_preferences`.
